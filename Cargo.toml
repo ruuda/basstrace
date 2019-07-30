@@ -1,0 +1,9 @@
+[package]
+name = "basstrace"
+version = "0.0.0"
+authors = ["Ruud van Asseldonk <dev@veniogames.com>"]
+edition = "2018"
+
+[dependencies]
+gtk = "0.7.0"
+gio = "0.7.0"
