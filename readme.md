@@ -2,6 +2,8 @@
 
 Visualize room acoustics.
 
+**This is vaporware. The description below is hypothetical.**
+
 Basstrace takes a description of a room and a speaker placement, and uses ray
 tracing to compute where in the room constructive and destructive interference
 occur at different frequencies, and what the expected frequency response is at
