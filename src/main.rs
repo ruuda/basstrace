@@ -5,9 +5,8 @@
 // it under the terms of the GNU General Public License version 3. A copy
 // of the License is available in the root of the repository.
 
-extern crate gio;
-extern crate gtk;
-extern crate gdk_pixbuf;
+mod vec2;
+mod complex;
 
 use gio::prelude::*;
 use gtk::prelude::*;
