@@ -29,6 +29,19 @@ fn build_canvas() -> Option<gdk::Pixbuf> {
     )
 }
 
+fn paint(pixbuf: &mut gdk::Pixbuf) {
+
+    for y in 0..720 {
+        for x in 0..1280 {
+            let r = if y & 1 == 1 { 255 } else { 0 };
+            let g = if x & 1 == 1 { 255 } else { 0 };
+            let b = 0;
+            let a = 255;
+            pixbuf.put_pixel(x, y, r, g, b, a);
+        }
+    }
+}
+
 fn build_ui(application: &gtk::Application) {
     let window = gtk::ApplicationWindow::new(application);
 
@@ -39,6 +52,10 @@ fn build_ui(application: &gtk::Application) {
     window.set_border_width(10);
     window.set_position(gtk::WindowPosition::Center);
     window.set_default_size(1280, 720);
+
+    if let Some(mut pixbuf) = image.get_pixbuf() {
+        paint(&mut pixbuf);
+    }
 
     window.add(&image);
 
