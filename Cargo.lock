@@ -28,6 +28,7 @@ dependencies = [
 name = "basstrace"
 version = "0.0.0"
 dependencies = [
+ "gdk-pixbuf 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gio 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gtk 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

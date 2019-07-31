@@ -5,5 +5,6 @@ authors = ["Ruud van Asseldonk <dev@veniogames.com>"]
 edition = "2018"
 
 [dependencies]
-gtk = "0.7.0"
-gio = "0.7.0"
+gdk-pixbuf = "0.7.0"
+gio        = "0.7.0"
+gtk        = "0.7.0"
