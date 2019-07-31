@@ -11,11 +11,20 @@ use crate::vec2::Vec2;
 
 /// Represents a complex number.
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct Complex(pub Vec2);
+pub struct Complex(pub Vec2);
 
 impl Complex {
     pub fn new(real: f32, imag: f32) -> Complex {
         Complex(Vec2::new(real, imag))
+    }
+
+    pub fn zero() -> Complex {
+        Complex(Vec2::zero())
+    }
+
+    /// Return `exp(i * t)`.
+    pub fn exp_i(t: f32) -> Complex {
+        Complex(Vec2::new(t.cos(), t.sin()))
     }
 
     pub fn real(&self) -> f32 {
@@ -24,6 +33,10 @@ impl Complex {
 
     pub fn imag(&self) -> f32 {
         self.0.y
+    }
+
+    pub fn norm(&self) -> f32 {
+        self.0.norm()
     }
 }
 

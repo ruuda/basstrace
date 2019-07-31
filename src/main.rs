@@ -5,14 +5,18 @@
 // it under the terms of the GNU General Public License version 3. A copy
 // of the License is available in the root of the repository.
 
-mod vec2;
-mod complex;
+use std::env;
 
 use gio::prelude::*;
 use gtk::prelude::*;
 use gdk_pixbuf as gdk;
 
-use std::env;
+mod complex;
+mod scene;
+mod vec2;
+
+use scene::Scene;
+use vec2::Vec2;
 
 fn build_canvas() -> Option<gdk::Pixbuf> {
     let has_alpha = false;
@@ -28,13 +32,21 @@ fn build_canvas() -> Option<gdk::Pixbuf> {
     )
 }
 
-fn paint(pixbuf: &mut gdk::Pixbuf) {
-
+fn paint(scene: &Scene, pixbuf: &mut gdk::Pixbuf) {
     for y in 0..720 {
+        let ym = (y - 360) as f32 * 0.01;
+
         for x in 0..1280 {
-            let r = if y & 1 == 1 { 255 } else { 0 };
-            let g = if x & 1 == 1 { 255 } else { 0 };
-            let b = 0;
+            let xm = (x - 640) as f32 * 0.01;
+
+            let position = Vec2::new(xm, ym);
+            let frequency = 840.0;
+            let magnitude = scene.sample_at(frequency, position).norm().log10();
+            let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
+
+            let r = (rf * 255.0) as u8;
+            let g = r;
+            let b = r;
             let a = 255;
             pixbuf.put_pixel(x, y, r, g, b, a);
         }
@@ -53,7 +65,8 @@ fn build_ui(application: &gtk::Application) {
     window.set_default_size(1280, 720);
 
     if let Some(mut pixbuf) = image.get_pixbuf() {
-        paint(&mut pixbuf);
+        let scene = Scene::new_example();
+        paint(&scene, &mut pixbuf);
     }
 
     window.add(&image);

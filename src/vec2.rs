@@ -7,7 +7,7 @@
 
 use std::ops;
 
-/// Represents a vector in ℝ².
+/// Represents a vector in ℝ² endowed with the Euclidean metric.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec2 {
     pub x: f32,
@@ -20,6 +20,21 @@ impl Vec2 {
             x: x,
             y: y,
         }
+    }
+
+    pub fn zero() -> Vec2 {
+        Vec2 {
+            x: 0.0,
+            y: 0.0,
+        }
+    }
+
+    pub fn norm_squared(&self) -> f32 {
+        self.x * self.x + self.y * self.y
+    }
+
+    pub fn norm(&self) -> f32 {
+       self.norm_squared().sqrt()
     }
 }
 
