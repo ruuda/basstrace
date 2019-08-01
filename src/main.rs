@@ -32,7 +32,7 @@ fn build_canvas() -> Option<gdk::Pixbuf> {
     )
 }
 
-fn paint(scene: &Scene, pixbuf: &mut gdk::Pixbuf) {
+fn paint(scene: &Scene, frequency: f32, pixbuf: &mut gdk::Pixbuf) {
     for y in 0..720 {
         let ym = (y - 360) as f32 * 0.01;
 
@@ -40,7 +40,6 @@ fn paint(scene: &Scene, pixbuf: &mut gdk::Pixbuf) {
             let xm = (x - 640) as f32 * 0.01;
 
             let position = Vec2::new(xm, ym);
-            let frequency = 880.0;
             let magnitude = scene.sample_at(frequency, position).norm().log10();
             let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
 
@@ -70,11 +69,6 @@ fn build_ui(application: &gtk::Application) {
     let canvas = build_canvas();
     let image = gtk::Image::new_from_pixbuf(canvas.as_ref());
 
-    if let Some(mut pixbuf) = image.get_pixbuf() {
-        let scene = Scene::new_example();
-        paint(&scene, &mut pixbuf);
-    }
-
     let expand = false;
     let fill = false;
     let padding = 0;
@@ -88,7 +82,15 @@ fn build_ui(application: &gtk::Application) {
         min, max, step,
     );
     scale.connect_value_changed(move |scale_ref| {
-        println!("{:?}", scale_ref.get_value());
+        // Frequency = 10^slider_value.
+        let log10_frequency = scale_ref.get_value() as f32;
+        let frequency = 2.0 * 10_f32.powf(log10_frequency);
+
+        if let Some(mut pixbuf) = image.get_pixbuf() {
+            let scene = Scene::new_example();
+            paint(&scene, frequency, &mut pixbuf);
+            image.set_from_pixbuf(Some(&pixbuf));
+        }
     });
 
     let expand = true;
