@@ -87,6 +87,9 @@ fn build_ui(application: &gtk::Application) {
         gtk::Orientation::Horizontal,
         min, max, step,
     );
+    scale.connect_value_changed(move |scale_ref| {
+        println!("{:?}", scale_ref.get_value());
+    });
 
     let expand = true;
     let fill = false;
