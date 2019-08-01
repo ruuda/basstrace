@@ -40,7 +40,7 @@ fn paint(scene: &Scene, pixbuf: &mut gdk::Pixbuf) {
             let xm = (x - 640) as f32 * 0.01;
 
             let position = Vec2::new(xm, ym);
-            let frequency = 840.0;
+            let frequency = 880.0;
             let magnitude = scene.sample_at(frequency, position).norm().log10();
             let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
 

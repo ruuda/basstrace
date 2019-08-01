@@ -53,6 +53,14 @@ impl Scene {
         let mut z = Complex::zero();
         for s in &self.sources {
             z = z + s.sample_at(frequency, position);
+
+            // Create a reflection at y = -1.0.
+            if position.y > -1.0 {
+                let reflected_pos = Vec2::new(position.x, -1.0 - (position.y + 1.0));
+                z = z + s.sample_at(frequency, reflected_pos);
+            } else {
+                z = Complex::zero();
+            }
         }
         z
     }
