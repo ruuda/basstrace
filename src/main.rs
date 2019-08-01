@@ -56,20 +56,42 @@ fn paint(scene: &Scene, pixbuf: &mut gdk::Pixbuf) {
 fn build_ui(application: &gtk::Application) {
     let window = gtk::ApplicationWindow::new(application);
 
-    let canvas = build_canvas();
-    let image = gtk::Image::new_from_pixbuf(canvas.as_ref());
-
     window.set_title("Basstrace");
     window.set_border_width(10);
     window.set_position(gtk::WindowPosition::Center);
     window.set_default_size(1280, 720);
+
+    let vbox = gtk::Box::new(
+        gtk::Orientation::Vertical,
+        10,
+    );
+    window.add(&vbox);
+
+    let canvas = build_canvas();
+    let image = gtk::Image::new_from_pixbuf(canvas.as_ref());
 
     if let Some(mut pixbuf) = image.get_pixbuf() {
         let scene = Scene::new_example();
         paint(&scene, &mut pixbuf);
     }
 
-    window.add(&image);
+    let expand = false;
+    let fill = false;
+    let padding = 0;
+    vbox.pack_start(&image, expand, fill, padding);
+
+    let min = 1.0;
+    let max = 4.0;
+    let step = 0.05;
+    let scale = gtk::Scale::new_with_range(
+        gtk::Orientation::Horizontal,
+        min, max, step,
+    );
+
+    let expand = true;
+    let fill = false;
+    let padding = 0;
+    vbox.pack_start(&scale, expand, fill, padding);
 
     window.show_all();
 }
