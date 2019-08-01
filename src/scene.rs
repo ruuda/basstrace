@@ -42,8 +42,8 @@ impl Scene {
     pub fn new_example() -> Scene {
         Scene {
             sources: vec![
-                Source { position: Vec2::new(-1.0, 0.0) },
-                Source { position: Vec2::new( 1.0, 0.0) },
+                Source { position: Vec2::new(-1.65, -1.0) },
+                Source { position: Vec2::new( 1.65, -1.0) },
             ],
         }
     }
@@ -54,12 +54,41 @@ impl Scene {
         for s in &self.sources {
             z = z + s.sample_at(frequency, position);
 
-            // Create a reflection at y = -1.0.
-            if position.y > -1.0 {
-                let reflected_pos = Vec2::new(position.x, -1.0 - (position.y + 1.0));
-                z = z + s.sample_at(frequency, reflected_pos);
-            } else {
+            // Create a reflection at y = -2.0.
+            let y_wall = -2.0;
+            if position.y < y_wall {
                 z = Complex::zero();
+                continue;
+            } else {
+                let reflected_pos = Vec2::new(position.x, y_wall - (position.y - y_wall));
+                z = z + s.sample_at(frequency, reflected_pos);
+            }
+
+            let y_wall = 3.0;
+            if position.y > y_wall {
+                z = Complex::zero();
+                continue;
+            } else {
+                let reflected_pos = Vec2::new(position.x, y_wall - (position.y - y_wall));
+                z = z + s.sample_at(frequency, reflected_pos);
+            }
+
+            let x_wall = -2.5;
+            if position.x < x_wall {
+                z = Complex::zero();
+                continue;
+            } else {
+                let reflected_pos = Vec2::new(x_wall - (position.x - x_wall), position.y);
+                z = z + s.sample_at(frequency, reflected_pos);
+            }
+
+            let x_wall = 6.0;
+            if position.x > x_wall {
+                z = Complex::zero();
+                continue;
+            } else {
+                let reflected_pos = Vec2::new(x_wall - (position.x - x_wall), position.y);
+                z = z + s.sample_at(frequency, reflected_pos);
             }
         }
         z
