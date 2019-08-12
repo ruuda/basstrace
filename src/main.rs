@@ -35,12 +35,12 @@ fn build_canvas() -> Option<gdk::Pixbuf> {
 
 fn paint(scene: &Scene, frequency: f32, pixbuf: &mut gdk::Pixbuf) {
     for y in 0..720 {
-        let ym = (y - 360) as f32 * 0.01;
+        let ym = y as f32 * 0.008;
 
         for x in 0..1280 {
-            let xm = (x - 640) as f32 * 0.01;
+            let xm = x as f32 * 0.008;
 
-            let position = Vec3::new(xm, ym, 1.0);
+            let position = Vec3::new(xm - 0.5, ym - 0.5, 1.0);
             let magnitude = scene.sample_at(frequency, position).norm().log10();
             let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
 
