@@ -14,9 +14,10 @@ use gdk_pixbuf as gdk;
 mod complex;
 mod scene;
 mod vec2;
+mod vec3;
 
 use scene::Scene;
-use vec2::Vec2;
+use vec3::Vec3;
 
 fn build_canvas() -> Option<gdk::Pixbuf> {
     let has_alpha = false;
@@ -39,7 +40,7 @@ fn paint(scene: &Scene, frequency: f32, pixbuf: &mut gdk::Pixbuf) {
         for x in 0..1280 {
             let xm = (x - 640) as f32 * 0.01;
 
-            let position = Vec2::new(xm, ym);
+            let position = Vec3::new(xm, ym, 1.0);
             let magnitude = scene.sample_at(frequency, position).norm().log10();
             let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
 

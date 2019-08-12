@@ -8,14 +8,14 @@
 use std::f32::consts::PI;
 
 use crate::complex::Complex;
-use crate::vec2::Vec2;
+use crate::vec3::Vec3;
 
 /// The speed of sound in m/s in air at 25 degrees Celsius and 1 atm.
 /// TODO: Parametrize temperature and pressure.
 const SPEED_OF_SOUND: f32 = 346.3;
 
 pub struct Source {
-    position: Vec2,
+    position: Vec3,
 }
 
 impl Source {
@@ -23,7 +23,7 @@ impl Source {
     ///
     /// * `frequency` specifies the source frequency in Hz.
     /// * `position` specifies the position measured in meters from the origin.
-    pub fn sample_at(&self, frequency: f32, position: Vec2) -> Complex {
+    pub fn sample_at(&self, frequency: f32, position: Vec3) -> Complex {
         let distance_squared = (position - self.position).norm_squared();
         let n_waves = frequency * distance_squared.sqrt() / SPEED_OF_SOUND;
         // NOTE: Should be 1/d in 2d, but I want to do 3d eventually, where it
@@ -49,7 +49,7 @@ impl Scene {
     }
 
     /// See `Source::sample_at()`.
-    pub fn sample_at(&self, frequency: f32, position: Vec2) -> Complex {
+    pub fn sample_at(&self, frequency: f32, position: Vec3) -> Complex {
         let mut z = Complex::zero();
         for s in &self.sources {
             z = z + s.sample_at(frequency, position);
@@ -60,7 +60,7 @@ impl Scene {
                 z = Complex::zero();
                 continue;
             } else {
-                let reflected_pos = Vec2::new(position.x, y_wall - (position.y - y_wall));
+                let reflected_pos = Vec3::new(position.x, y_wall - (position.y - y_wall), position.z);
                 z = z + s.sample_at(frequency, reflected_pos);
             }
 
@@ -69,7 +69,7 @@ impl Scene {
                 z = Complex::zero();
                 continue;
             } else {
-                let reflected_pos = Vec2::new(position.x, y_wall - (position.y - y_wall));
+                let reflected_pos = Vec3::new(position.x, y_wall - (position.y - y_wall), position.z);
                 z = z + s.sample_at(frequency, reflected_pos);
             }
 
@@ -78,7 +78,7 @@ impl Scene {
                 z = Complex::zero();
                 continue;
             } else {
-                let reflected_pos = Vec2::new(x_wall - (position.x - x_wall), position.y);
+                let reflected_pos = Vec3::new(x_wall - (position.x - x_wall), position.y, position.z);
                 z = z + s.sample_at(frequency, reflected_pos);
             }
 
@@ -87,7 +87,7 @@ impl Scene {
                 z = Complex::zero();
                 continue;
             } else {
-                let reflected_pos = Vec2::new(x_wall - (position.x - x_wall), position.y);
+                let reflected_pos = Vec3::new(x_wall - (position.x - x_wall), position.y, position.z);
                 z = z + s.sample_at(frequency, reflected_pos);
             }
         }
