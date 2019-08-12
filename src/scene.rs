@@ -146,7 +146,7 @@ impl Scene {
             }
         }
 
-        let reflectivity = 0.8;
+        let reflectivity = -0.8;
 
         let mut z = Complex::zero();
         for s in &self.sources {
