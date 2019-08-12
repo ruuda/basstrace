@@ -14,8 +14,43 @@ use crate::vec3::Vec3;
 /// TODO: Parametrize temperature and pressure.
 const SPEED_OF_SOUND: f32 = 346.3;
 
+/// A speaker, emitting sound in the given direction.
 pub struct Source {
     position: Vec3,
+    direction: Vec3,
+}
+
+impl Source {
+    pub fn new(position: Vec3, aimed_at: Vec3) -> Source {
+        Source {
+            position: position,
+            direction: (aimed_at - position).normalized(),
+        }
+    }
+
+    /// Sample the field produced by the source at the given position.
+    ///
+    /// * `frequency` specifies the source frequency in Hz.
+    /// * `position` specifies the position measured in meters from the origin.
+    pub fn sample_at(&self, frequency: f32, position: Vec3) -> Complex {
+        // The energy falls off with radius squared.
+        let distance_squared = (position - self.position).norm_squared();
+        let attenuation_distance = distance_squared.recip();
+
+        // The phase is proportional to the distance.
+        let distance = distance_squared.sqrt();
+        let n_waves = frequency * distance / SPEED_OF_SOUND;
+
+        // Furthermore, if we are behind the speaker, the phase is inverted, and
+        // we assume that the speaker does not emit sound sideways. We model
+        // this with another attenuation factor, proportional to the dot product
+        // between the normalized direction to the target, and speaker output
+        // direction.
+        let dot = (position - self.position).dot(self.direction);
+        let attenuation_phase = dot * distance.recip();
+
+        Complex::exp_i(2.0 * PI * n_waves) * attenuation_distance * attenuation_phase
+    }
 }
 
 /// An (infinite) band, the intersection of two half-planes.
@@ -60,21 +95,6 @@ impl Face {
     }
 }
 
-impl Source {
-    /// Sample the field produced by the source at the given position.
-    ///
-    /// * `frequency` specifies the source frequency in Hz.
-    /// * `position` specifies the position measured in meters from the origin.
-    pub fn sample_at(&self, frequency: f32, position: Vec3) -> Complex {
-        let distance_squared = (position - self.position).norm_squared();
-        let n_waves = frequency * distance_squared.sqrt() / SPEED_OF_SOUND;
-        // NOTE: Should be 1/d in 2d, but I want to do 3d eventually, where it
-        // should be 1/d^2.
-        let amplitude = distance_squared.recip();
-        Complex::exp_i(2.0 * PI * n_waves) * amplitude
-    }
-}
-
 pub struct Scene {
     sources: Vec<Source>,
     faces: Vec<Face>,
@@ -91,12 +111,16 @@ impl Scene {
         let p2 = Vec3::new(8.32, 3.35, 0.0);
         let p3 = Vec3::new(0.00, 3.35, 0.0);
 
+        let s1 = Vec3::new(0.60, 0.30, 1.0);
+        let s2 = Vec3::new(2.20, 0.30, 1.0);
+        let listener = Vec3::new(1.40, 3.0, 1.0);
+
         let ceil_off = Vec3::new(0.0, 0.0, 2.8);
 
         Scene {
             sources: vec![
-                Source { position: Vec3::new(0.60, 0.30, 1.0) },
-                Source { position: Vec3::new(2.20, 0.30, 1.0) },
+                Source::new(s1, listener),
+                Source::new(s2, listener),
             ],
 
             faces: vec![
@@ -147,12 +171,12 @@ impl Scene {
                         let p3 = self.faces[k].reflect(p2);
                         z = z + s.sample_at(frequency, p3) * (reflectivity * reflectivity * reflectivity);
 
-                        for m in 0..self.faces.len() {
+                        /*for m in 0..self.faces.len() {
                             if k == m { continue }
                             // Order 4: after four reflections.
                             let p4 = self.faces[m].reflect(p3);
                             z = z + s.sample_at(frequency, p4) * (reflectivity * reflectivity * reflectivity * reflectivity);
-                        }
+                        }*/
                     }
                 }
             }
