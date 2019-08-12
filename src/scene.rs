@@ -115,21 +115,49 @@ impl Scene {
 
     /// See `Source::sample_at()`.
     pub fn sample_at(&self, frequency: f32, position: Vec3) -> Complex {
+        // Sample first order reflections.
+        for face in &self.faces {
+            if !face.is_facing(position) {
+                return Complex::zero();
+            }
+        }
+
+        let reflectivity = 0.8;
+
         let mut z = Complex::zero();
         for s in &self.sources {
-            z = z + s.sample_at(frequency, position);
+            // Order 0: direct.
+            let p0 = position;
+            z = z + s.sample_at(frequency, p0);
 
-            // Sample first order reflections.
-            for face in &self.faces {
-                if face.is_facing(position) {
-                    let reflected_pos = face.reflect(position);
-                    z = z + s.sample_at(frequency, reflected_pos);
-                } else {
-                    z = Complex::zero();
-                    break
+            for i in 0..self.faces.len() {
+                // Order 1: after a single reflection.
+                let p1 = self.faces[i].reflect(p0);
+                z = z + s.sample_at(frequency, p1) * reflectivity;
+
+                for j in 0..self.faces.len() {
+                    if i == j { continue }
+                    // Order 2: after two reflections.
+                    let p2 = self.faces[j].reflect(p1);
+                    z = z + s.sample_at(frequency, p2) * (reflectivity * reflectivity);
+
+                    for k in 0..self.faces.len() {
+                        if j == k { continue }
+                        // Order 3: after three reflections.
+                        let p3 = self.faces[k].reflect(p2);
+                        z = z + s.sample_at(frequency, p3) * (reflectivity * reflectivity * reflectivity);
+
+                        for m in 0..self.faces.len() {
+                            if k == m { continue }
+                            // Order 4: after four reflections.
+                            let p4 = self.faces[m].reflect(p3);
+                            z = z + s.sample_at(frequency, p4) * (reflectivity * reflectivity * reflectivity * reflectivity);
+                        }
+                    }
                 }
             }
         }
+
         z
     }
 }
