@@ -6,10 +6,13 @@
 // of the License is available in the root of the repository.
 
 use std::env;
+use std::sync::Arc;
+use std::thread;
 
-use gio::prelude::*;
-use gtk::prelude::*;
 use gdk_pixbuf as gdk;
+use gio::prelude::*;
+use glib;
+use gtk::prelude::*;
 
 mod complex;
 mod renderer;
@@ -17,6 +20,7 @@ mod scene;
 mod vec2;
 mod vec3;
 
+use renderer::Renderer;
 use scene::Scene;
 use vec3::Vec3;
 
@@ -34,27 +38,7 @@ fn build_canvas() -> Option<gdk::Pixbuf> {
     )
 }
 
-fn paint(scene: &Scene, frequency: f32, pixbuf: &mut gdk::Pixbuf) {
-    for y in 0..720 {
-        let ym = y as f32 * 0.008;
-
-        for x in 0..1280 {
-            let xm = x as f32 * 0.008;
-
-            let position = Vec3::new(xm - 0.5, ym - 0.5, 1.0);
-            let magnitude = scene.sample_at(frequency, position).norm().log10();
-            let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
-
-            let r = (rf * 255.0) as u8;
-            let g = r;
-            let b = r;
-            let a = 255;
-            pixbuf.put_pixel(x, y, r, g, b, a);
-        }
-    }
-}
-
-fn build_ui(application: &gtk::Application) {
+fn build_ui(application: &gtk::Application, renderer: &Arc<Renderer>) {
     let window = gtk::ApplicationWindow::new(application);
 
     window.set_title("Basstrace");
@@ -83,22 +67,29 @@ fn build_ui(application: &gtk::Application) {
         gtk::Orientation::Horizontal,
         min, max, step,
     );
+    let r_ref = renderer.clone();
     scale.connect_value_changed(move |scale_ref| {
         // Frequency = 10^slider_value.
         let log10_frequency = scale_ref.get_value() as f32;
-        let frequency = 2.0 * 10_f32.powf(log10_frequency);
+        let frequency_hz = 2.0 * 10_f32.powf(log10_frequency);
 
-        if let Some(mut pixbuf) = image.get_pixbuf() {
-            let scene = Scene::new_example();
-            paint(&scene, frequency, &mut pixbuf);
-            image.set_from_pixbuf(Some(&pixbuf));
-        }
+        r_ref.set_frequency(frequency_hz);
     });
 
     let expand = true;
     let fill = false;
     let padding = 0;
     vbox.pack_start(&scale, expand, fill, padding);
+
+    // Update the image every 5 seconds.
+    let r_ref = renderer.clone();
+    glib::source::timeout_add_seconds_local(5, move || {
+        if let Some(mut pixbuf) = image.get_pixbuf() {
+            r_ref.paint(&mut pixbuf);
+            image.set_from_pixbuf(Some(&pixbuf));
+        }
+        glib::source::Continue(true)
+    });
 
     window.show_all();
 }
@@ -109,8 +100,17 @@ fn main() {
         Default::default(),
     ).unwrap();
 
-    application.connect_activate(|app| {
-        build_ui(app);
+    let renderer = Arc::new(Renderer::new());
+
+    for _ in 0..4 {
+        let r_ref = renderer.clone();
+        thread::spawn(move || {
+            r_ref.run_render_loop();
+        });
+    }
+
+    application.connect_activate(move |app| {
+        build_ui(app, &renderer);
     });
 
     let args: Vec<_> = env::args().collect();

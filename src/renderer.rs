@@ -19,7 +19,7 @@ struct RenderParams {
     frequency_hz: f32,
 }
 
-struct Renderer {
+pub struct Renderer {
     scene: Scene,
     width: u32,
     height: u32,
@@ -28,19 +28,40 @@ struct Renderer {
 }
 
 impl Renderer {
+    pub fn new() -> Renderer {
+        let params = RenderParams {
+            frequency_hz: 440.0,
+        };
+
+        let width = 1280;
+        let height = 720;
+
+        let buffer: Vec<_> = iter::repeat(Complex::zero())
+            .take(width * height)
+            .collect();
+
+        Renderer {
+            scene: Scene::new_example(),
+            width: width as u32,
+            height: height as u32,
+            params: Mutex::new(params),
+            buffer: Mutex::new(buffer),
+        }
+    }
+
     #[inline]
     fn area(&self) -> usize {
         self.width as usize * self.height as usize
     }
 
-    fn clear(&self) {
+    pub fn clear(&self) {
         let mut b = self.buffer.lock().unwrap();
         for z in b.iter_mut() {
             *z = Complex::zero();
         }
     }
 
-    fn set_frequency(&self, f_hz: f32) {
+    pub fn set_frequency(&self, f_hz: f32) {
         let mut p = self.params.lock().unwrap();
         p.frequency_hz = f_hz;
         self.clear();
@@ -56,8 +77,11 @@ impl Renderer {
 
         // Only accumulate if the values we want to add were computed for the
         // same parameters.
-        if *self.params.lock().unwrap() != *params {
-            return
+        {
+            let p = self.params.lock().unwrap();
+            if *p != *params {
+                return
+            }
         }
 
         let mut b = self.buffer.lock().unwrap();
@@ -69,19 +93,19 @@ impl Renderer {
         }
     }
 
-    fn run_render_loop(&self) {
+    pub fn run_render_loop(&self) {
         let mut buffer: Vec<_> = iter::repeat(Complex::zero())
             .take(self.area())
             .collect();
 
         loop {
-            let params = self.params.lock().unwrap();
-            render_one(&self.scene, &params, &mut buffer[..]);
+            let params = self.params.lock().unwrap().clone();
+            render_one(&self.scene, &params, &mut buffer[..], self.width, self.height);
             self.accumulate_move(&params, &mut buffer[..]);
         }
     }
 
-    fn paint(&self, pixbuf: &mut gdk::Pixbuf) {
+    pub fn paint(&self, pixbuf: &mut gdk::Pixbuf) {
         let buffer = self.buffer.lock().unwrap();
         assert_eq!(buffer.len(), self.area());
 
@@ -103,14 +127,22 @@ impl Renderer {
     }
 }
 
-fn render_one(scene: &Scene, params: &RenderParams, buffer: &mut [Complex]) {
-    for y in 0..720 {
+fn render_one(
+    scene: &Scene,
+    params: &RenderParams,
+    buffer: &mut [Complex],
+    width: u32,
+    height: u32,
+) {
+    for y in 0..height {
         let ym = y as f32 * 0.008;
 
-        for x in 0..1280 {
+        for x in 0..width {
+            let i = (y * width + x) as usize;
+
             let xm = x as f32 * 0.008;
             let position = Vec3::new(xm - 0.5, ym - 0.5, 1.0);
-            let magnitude = scene.sample_at(params.frequency_hz, position).norm().log10();
+            buffer[i] = scene.sample_at(params.frequency_hz, position);
         }
     }
 }
