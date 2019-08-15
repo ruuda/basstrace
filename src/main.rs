@@ -12,6 +12,7 @@ use gtk::prelude::*;
 use gdk_pixbuf as gdk;
 
 mod complex;
+mod renderer;
 mod scene;
 mod vec2;
 mod vec3;
