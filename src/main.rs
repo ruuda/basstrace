@@ -15,6 +15,7 @@ use glib;
 use gtk::prelude::*;
 
 mod complex;
+mod rand;
 mod renderer;
 mod scene;
 mod vec2;
@@ -107,10 +108,10 @@ fn main() {
 
     let renderer = Arc::new(Renderer::new());
 
-    for _ in 0..4 {
+    for i in 0..4 {
         let r_ref = renderer.clone();
         thread::spawn(move || {
-            r_ref.run_render_loop();
+            r_ref.run_render_loop(i);
         });
     }
 

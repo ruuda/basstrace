@@ -11,6 +11,7 @@ use std::iter;
 use gdk_pixbuf as gdk;
 
 use crate::complex::Complex;
+use crate::rand::Rng;
 use crate::scene::Scene;
 use crate::vec3::Vec3;
 
@@ -93,14 +94,16 @@ impl Renderer {
         }
     }
 
-    pub fn run_render_loop(&self) {
+    pub fn run_render_loop(&self, seed: u64) {
         let mut buffer: Vec<_> = iter::repeat(Complex::zero())
             .take(self.area())
             .collect();
 
+        let mut rng = Rng::new(seed);
+
         loop {
             let params = self.params.lock().unwrap().clone();
-            render_one(&self.scene, &params, &mut buffer[..], self.width, self.height);
+            render_one(&self.scene, &params, &mut rng, &mut buffer[..], self.width, self.height);
             self.accumulate_move(&params, &mut buffer[..]);
         }
     }
@@ -130,6 +133,7 @@ impl Renderer {
 fn render_one(
     scene: &Scene,
     params: &RenderParams,
+    rng: &mut Rng,
     buffer: &mut [Complex],
     width: u32,
     height: u32,
@@ -142,7 +146,7 @@ fn render_one(
 
             let xm = x as f32 * 0.008;
             let position = Vec3::new(xm - 0.5, ym - 0.5, 1.0);
-            buffer[i] = scene.sample_at(params.frequency_hz, position);
+            buffer[i] = scene.sample_at(rng, params.frequency_hz, position);
         }
     }
 }

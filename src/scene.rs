@@ -9,6 +9,7 @@ use std::f32::consts::PI;
 
 use crate::complex::Complex;
 use crate::vec3::Vec3;
+use crate::rand::Rng;
 
 /// The speed of sound in m/s in air at 25 degrees Celsius and 1 atm.
 /// TODO: Parametrize temperature and pressure.
@@ -138,7 +139,7 @@ impl Scene {
     }
 
     /// See `Source::sample_at()`.
-    pub fn sample_at(&self, frequency: f32, position: Vec3) -> Complex {
+    pub fn sample_at(&self, rng: &mut Rng, frequency: f32, position: Vec3) -> Complex {
         // Sample first order reflections.
         for face in &self.faces {
             if !face.is_facing(position) {
@@ -149,6 +150,7 @@ impl Scene {
         let reflectivity = -0.8;
 
         let mut z = Complex::zero();
+
         for s in &self.sources {
             // Order 0: direct.
             let p0 = position;
