@@ -17,8 +17,8 @@ const SPEED_OF_SOUND: f32 = 346.3;
 
 /// A speaker, emitting sound in the given direction.
 pub struct Source {
-    position: Vec3,
-    direction: Vec3,
+    pub position: Vec3,
+    pub direction: Vec3,
 }
 
 impl Source {
@@ -97,8 +97,8 @@ impl Face {
 }
 
 pub struct Scene {
-    sources: Vec<Source>,
-    faces: Vec<Face>,
+    pub sources: Vec<Source>,
+    pub faces: Vec<Face>,
 }
 
 impl Scene {
@@ -147,41 +147,56 @@ impl Scene {
             }
         }
 
-        let reflectivity = -0.8;
+        let reflectivity = -0.95;
+
+        // The incoming energy is the sum over all paths that start at the
+        // source and end at the listener. We can partition the set of all paths
+        // by the number of bounces, such that the sum is the sum over n from 0
+        // to infinity, of the contribution from paths with n bounces. Below we
+        // only evaluate the contributions up to some finite n, and we assume
+        // that beyond that, the contributions are small enough to be negligible.
+        // For a given n, we can enumerate the set of paths with n bounces: at
+        // n=0 we have a direct path, at n=1 we can bounce via any of the faces,
+        // at n=1 we can bounce via any of the faces first, and then through a
+        // different face, etc. The number of paths blows up as num_faces^n, so
+        // enumerating them quickly becomes infeasible; we need to sample. And
+        // while we're sampling for a given n, we need to compute the
+        // reflections for n-1 anyway, so we might as well sample n-1 at the
+        // same time. The set of paths with n+1 bounces is num_faces-1 times as
+        // large as the set of paths with n bounces, so for every path with n+1
+        // bounces, if we take its prefix of n bounces into account too, then
+        // the weight of the path with n+1 bounces should be num_faces-1 times
+        // as large.
+        let factor = reflectivity * (self.faces.len() - 1) as f32;
+
+        let si = rng.index(&self.sources[..]);
+        let source = &self.sources[si];
 
         let mut z = Complex::zero();
+        let mut p = position;
+        let mut amplitude = 1.0 / 4096.0;
+        let mut fi = rng.index(&self.faces[..]);
 
-        for s in &self.sources {
-            // Order 0: direct.
-            let p0 = position;
-            z = z + s.sample_at(frequency, p0);
+        // We go for up to 56 bounces. With walls of 3m long, that amounts to
+        // about 500ms.
+        for bounce in 0..30 {
+            // Directly, from source to listener.
+            let m = source.sample_at(frequency, p);
+            z = z + m * amplitude;
 
-            for i in 0..self.faces.len() {
-                // Order 1: after a single reflection.
-                let p1 = self.faces[i].reflect(p0);
-                z = z + s.sample_at(frequency, p1) * reflectivity;
-
-                for j in 0..self.faces.len() {
-                    if i == j { continue }
-                    // Order 2: after two reflections.
-                    let p2 = self.faces[j].reflect(p1);
-                    z = z + s.sample_at(frequency, p2) * (reflectivity * reflectivity);
-
-                    for k in 0..self.faces.len() {
-                        if j == k { continue }
-                        // Order 3: after three reflections.
-                        let p3 = self.faces[k].reflect(p2);
-                        z = z + s.sample_at(frequency, p3) * (reflectivity * reflectivity * reflectivity);
-
-                        /*for m in 0..self.faces.len() {
-                            if k == m { continue }
-                            // Order 4: after four reflections.
-                            let p4 = self.faces[m].reflect(p3);
-                            z = z + s.sample_at(frequency, p4) * (reflectivity * reflectivity * reflectivity * reflectivity);
-                        }*/
-                    }
+            // Pick a face to reflect from, which should not be the same face
+            // that we reflected from last time.
+            loop {
+                let next_fi = rng.index(&self.faces[..]);
+                if next_fi != fi {
+                    fi = next_fi;
+                    break;
                 }
             }
+
+            let face = &self.faces[fi];
+            p = face.reflect(p);
+            amplitude *= factor;
         }
 
         z

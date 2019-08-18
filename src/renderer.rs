@@ -108,15 +108,42 @@ impl Renderer {
         }
     }
 
+    pub fn get_exposure(&self, buffer: &[Complex], width: u32) -> f32 {
+        let mut magnitude = 0.0;
+        let mut n = 0.0;
+
+        for s in &self.scene.sources[..] {
+            // We want to get the magnitude at 1m in front of the speaker, and
+            // define that to be 0 dB.
+            let p = s.position + s.direction;
+
+            for dx in &[-1, 0, 1] {
+                for dy in &[-1, 0, 1] {
+                    // TODO: Ensure in bounds.
+                    let xi = ((p.x + 0.5) / 0.008) as i32;
+                    let yi = ((p.y + 0.5) / 0.008) as i32;
+                    let i = ((yi + dy) * width as i32) + (xi + dx);
+
+                    magnitude += buffer[i as usize].norm().log10();
+                    n += 1.0;
+                }
+            }
+        }
+
+        magnitude / n
+    }
+
     pub fn paint(&self, pixbuf: &mut gdk::Pixbuf) {
         let buffer = self.buffer.lock().unwrap();
         assert_eq!(buffer.len(), self.area());
+
+        let exposure = self.get_exposure(&buffer[..], self.width);
 
         for y in 0..self.height {
             for x in 0..self.width {
                 let i = y * self.width + x;
 
-                let magnitude = buffer[i as usize].norm().log10();
+                let magnitude = buffer[i as usize].norm().log10() - exposure;
                 let rf = (0.5 + magnitude * 0.2).max(0.0).min(1.0);
 
                 let r = (rf * 255.0) as u8;

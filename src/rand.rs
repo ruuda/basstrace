@@ -10,10 +10,10 @@
 /// Translated from http://prng.di.unimi.it/splitmix64.c, which is licensed CC0.
 #[inline]
 pub fn splitmix64_next(state: &mut u64) -> u64 {
-    *state += 0x9e3779b97f4a7c15;
+    *state = state.wrapping_add(0x9e3779b97f4a7c15);
     let mut z = *state;
-    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9;
-    z = (z ^ (z >> 27)) * 0x94d049bb133111eb;
+    z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
     z ^ (z >> 31)
 }
 
@@ -22,7 +22,7 @@ pub fn splitmix64_next(state: &mut u64) -> u64 {
 /// Translated from http://prng.di.unimi.it/xoshiro256plusplus.c, which is licensed CC0.
 #[inline]
 pub fn xoshiro256pp_next(state: &mut [u64; 4]) -> u64 {
-    let result = (state[0] + state[3]).rotate_left(23) + state[0];
+    let result = (state[0].wrapping_add(state[3])).rotate_left(23).wrapping_add(state[0]);
 
     let t = state[1] << 17;
 
@@ -58,8 +58,15 @@ impl Rng {
         }
     }
 
+    /// Return a random 64-bit integer.
     #[inline]
     pub fn next(&mut self) -> u64 {
         xoshiro256pp_next(&mut self.state)
+    }
+
+    /// Return a random index into the slice.
+    #[inline]
+    pub fn index<T>(&mut self, xs: &[T]) -> usize {
+        self.next() as usize % xs.len()
     }
 }

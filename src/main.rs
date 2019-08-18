@@ -87,9 +87,9 @@ fn build_ui(application: &gtk::Application, renderer: &Arc<Renderer>) {
     let padding = 0;
     vbox.pack_start(&scale, expand, fill, padding);
 
-    // Update the image every 5 seconds.
+    // Update the image every 2 seconds.
     let r_ref = renderer.clone();
-    glib::source::timeout_add_seconds_local(5, move || {
+    glib::source::timeout_add_seconds_local(2, move || {
         if let Some(mut pixbuf) = image.get_pixbuf() {
             r_ref.paint(&mut pixbuf);
             image.set_from_pixbuf(Some(&pixbuf));
@@ -108,7 +108,7 @@ fn main() {
 
     let renderer = Arc::new(Renderer::new());
 
-    for i in 0..4 {
+    for i in 0..7 {
         let r_ref = renderer.clone();
         thread::spawn(move || {
             r_ref.run_render_loop(i);
