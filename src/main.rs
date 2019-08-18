@@ -62,7 +62,7 @@ fn build_ui(application: &gtk::Application, renderer: &Arc<Renderer>) {
 
     let min = 1.0;
     let max = 4.0;
-    let step = 0.05;
+    let step = 0.01;
     let scale = gtk::Scale::new_with_range(
         gtk::Orientation::Horizontal,
         min, max, step,
@@ -75,6 +75,11 @@ fn build_ui(application: &gtk::Application, renderer: &Arc<Renderer>) {
 
         r_ref.set_frequency(frequency_hz);
     });
+    scale.connect_format_value(move |_self, log10_frequency| {
+        let frequency_hz = 2.0 * 10_f32.powf(log10_frequency as f32);
+        format!("{:.1}", frequency_hz)
+    });
+    scale.set_value((440.0_f64 / 2.0).log10());
 
     let expand = true;
     let fill = false;
